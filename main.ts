@@ -4,12 +4,12 @@ const SECRET_PATH = Deno.env.get("SECRET_PATH") || "webhook";
 Deno.serve(async (req) => {
   const url = new URL(req.url);
 
-  // Allow GET for sanity checks
+  // Respond to browser visits
   if (req.method === "GET") {
     return new Response("🤖 Hello from your Telegram bot!", { status: 200 });
   }
 
-  // Only handle POST requests on the correct secret path
+  // Respond only to POST on the correct secret path
   if (url.pathname !== `/${SECRET_PATH}` || req.method !== "POST") {
     return new Response("Not found", { status: 404 });
   }
@@ -17,7 +17,8 @@ Deno.serve(async (req) => {
   let update;
   try {
     update = await req.json();
-  } catch {
+  } catch (err) {
+    console.error("Failed to parse JSON:", err);
     return new Response("Invalid JSON", { status: 400 });
   }
 
@@ -26,7 +27,9 @@ Deno.serve(async (req) => {
 
   if (chat_id && text) {
     let reply = "You said: " + text;
-    if (text === "/start") reply = "Hi! I'm your bot on Deno Deploy.";
+    if (text === "/start") {
+      reply = "Hi! I'm your bot on Deno Deploy.";
+    }
 
     await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
       method: "POST",
